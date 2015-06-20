@@ -4,9 +4,15 @@ author: "Paul Nakonechny"
 date: "June 17, 2015"
 output: html_document
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
 
 #Introduction
 
+A model was developed using data from six participants performing dumbell lifts in five different ways, incorrectly and correctly.  Accellerometer readings form the covariates for this prediction.
+
+#Extracting the Data
 
 ```{r}
 #Set working directory
@@ -28,6 +34,7 @@ testing<- read.csv("pml-testing.csv")
 
 #Data Cleaning
 
+A number of variables had a limited number of readings, an arbitrary threshold of 60% "NA" values for each variable was selected for exclusion in the final model.  Timestamp and window tracking variables were also removed on the advice of the TAs in the course forum.  This process left 55 variables to develop the mode on.
 ```{r}
 #Remove Columns that have more than 60% NA values, remove timestamps and ID
 training <- training[,colSums(is.na(testing))/nrow(testing) <= .6]
@@ -35,6 +42,8 @@ training <- training[,6:60]
 ```
 
 #Data Partition
+
+A validation set was created to validate the model before subjecting it to the final evaluation test set.
 ```{r}
 #Create a validation set from the training set
 set.seed(2)
@@ -45,12 +54,13 @@ validation <- training[-inTrain,]
 ```
 
 #Model Creation
-Cross validation and error rates
+
+A Random forest was used to develop the model, using 5-fold cross-validation. It should be noted that cross-validation is not normally required when using a random forest, however given the criteria for this project cross-validation was used nonetheless. The initial mode output indicates an out-of-the bag estimated error rate of 0.22%.
 ```{r}
 set.seed(2)
 modFitRF <- train(classe ~ ., method = "rf", prox = TRUE, data = training, 
                   trControl = trainControl(method = "cv", number = 5), allowParallel = TRUE)
-modFitRF
+print(modFitRF)
 
 #Estimate of error rate: 0.22%
 modFitRF$finalModel
@@ -58,18 +68,20 @@ modFitRF$finalModel
 
 #Test against validation set
 
+The model was applied to the validation set, results indicate 100% accuracy.
 ```{r}
 #Fit model against validation set
 predvalRF <- predict(modFitRF, newdata = validation)
-confusionMatrix(predvalRF, validation$classe)
+print(confusionMatrix(predvalRF, validation$classe))
 ```
 
 #Fit model against testing set
 
+The model was finally applied to the test set and submitted with 100% accuracy.
 ```{r}
 #Fit model against testing set
 predTestRF <- predict(modFitRF, newdata = testing)
-predTestRF
+print(predTestRF)
 ```
 
 #Conclusion
